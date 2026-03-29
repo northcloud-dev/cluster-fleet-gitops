@@ -1,8 +1,0 @@
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-resources:
-  - bind9-cluster-issuer.yaml
-  - local-ca-cluster-issuer.yaml
-  - self-signed-bootstrap-cluster-issuer.yaml
-  - cloudflare-cluster-issuer.yaml
-  
