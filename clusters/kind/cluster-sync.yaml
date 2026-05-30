@@ -1,0 +1,98 @@
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: capi-operator
+  namespace: flux-system
+spec:
+  interval: 15m
+  path: ./base/infrastructure/capi-operator
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  wait: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: kind-infrastructure
+  namespace: flux-system
+spec:
+  interval: 15m
+  path: ./clusters/kind/infrastructure
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  wait: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: kind-cilium
+  namespace: flux-system
+spec:
+  interval: 10m
+  dependsOn:
+    - name: kind-infrastructure
+  path: ./base/infrastructure/cilium
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  wait: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: kind-cert-manager
+  namespace: flux-system
+spec:
+  interval: 10m
+  dependsOn:
+    - name: kind-cilium
+  path: ./base/infrastructure/certmanager
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  wait: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: managed-flux-operator
+  namespace: flux-system
+spec:
+  interval: 10m
+  dependsOn:
+    - name: managed-cilium # Won't run until Cilium's Helm chart applies completely
+  path: ./base/infrastructure/flux-operator
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  kubeConfig:
+    secretRef:
+      name: workload-alpha-kubeconfig
+  wait: true
+
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: managed-flux-instance
+  namespace: flux-system
+spec:
+  interval: 10m
+  dependsOn:
+    - name: managed-flux-operator # Won't run until the operator pod is alive to handle webhooks
+  path: ./clusters/managed-cluster/sync-root
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  kubeConfig:
+    secretRef:
+      name: workload-alpha-kubeconfig
+  wait: true
